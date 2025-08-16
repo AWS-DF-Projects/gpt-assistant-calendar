@@ -1,0 +1,10 @@
+# Get the server working
+
+cd assistant-core
+node server.mjs
+
+-------------------------------
+
+# Run the website
+
+npm run dev
