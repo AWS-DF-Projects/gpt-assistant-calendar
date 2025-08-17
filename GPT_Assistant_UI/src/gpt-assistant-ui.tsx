@@ -1,15 +1,32 @@
 // src/gpt-assistant-ui.tsx
 import { useCallback, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UploadCloud, Calendar, ImageIcon, SendHorizontal, CheckCircle2 } from 'lucide-react';
+import {
+  UploadCloud,
+  Calendar,
+  ImageIcon,
+  SendHorizontal,
+  CheckCircle2,
+} from 'lucide-react';
 
 type Role = 'user' | 'assistant' | 'system';
 type Message = { id: string; role: Role; text: string };
-type UploadItem = { id: string; name: string; size: number; status: 'queued' | 'uploading' | 'uploaded' | 'error' };
+type UploadItem = {
+  id: string;
+  name: string;
+  size: number;
+  status: 'queued' | 'uploading' | 'uploaded' | 'error';
+};
 
 export default function AssistantUIMock() {
+  console.log('🚀 Assistant UI loaded');
+
   const [messages, setMessages] = useState<Message[]>([
-    { id: crypto.randomUUID(), role: 'assistant', text: 'How can I assist you today?' },
+    {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      text: 'How can I assist you today?',
+    },
   ]);
   const [input, setInput] = useState('');
   const [uploads, setUploads] = useState<UploadItem[]>([]);
@@ -17,17 +34,18 @@ export default function AssistantUIMock() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addMessage = (role: Role, text: string) => {
-    setMessages(m => [...m, { id: crypto.randomUUID(), role, text }]);
+    setMessages((m) => [...m, { id: crypto.randomUUID(), role, text }]);
   };
 
   const API_BASE = (import.meta as any).env?.VITE_API_BASE; // e.g. "https://your-api.example.com"
 
   const onSend = async () => {
     const text = input.trim();
+    console.log('📤 Sending user message:', text);
     if (!text) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
-    setMessages(m => [...m, userMsg]);
+    setMessages((m) => [...m, userMsg]);
     setInput('');
 
     try {
@@ -38,8 +56,13 @@ export default function AssistantUIMock() {
       }
 
       const payload = {
-        messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.text })),
+        messages: [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.text,
+        })),
       };
+
+      console.log('📦 Payload to send to API:', payload);
 
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
@@ -47,16 +70,21 @@ export default function AssistantUIMock() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
+      if (!res.ok)
+        throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
 
       const data = await res.json(); // { reply: string }
+      console.log('✅ API response:', data);
       addMessage('assistant', data.reply || '(no reply)');
     } catch (err: any) {
+      console.error('❌ Error from fetch:', err);
+      console.log(`💬 New message added:`, userMsg);
       addMessage('assistant', `⚠️ Error: ${err?.message || String(err)}`);
     }
   };
 
   const handleFiles = async (files: FileList | null) => {
+    console.log('📁 Files uploaded (mock):', files);
     if (!files?.length) return;
     setIsUploading(true);
 
@@ -68,10 +96,13 @@ export default function AssistantUIMock() {
     }));
 
     // Simulate latency for Stage 1 mock
-    await new Promise(r => setTimeout(r, 800));
-    setUploads(u => [...items, ...u]);
+    await new Promise((r) => setTimeout(r, 800));
+    setUploads((u) => [...items, ...u]);
     setIsUploading(false);
-    addMessage('assistant', `✅ (Mock) ${files.length} file(s) sent to S3 bucket`);
+    addMessage(
+      'assistant',
+      `✅ (Mock) ${files.length} file(s) sent to S3 bucket`
+    );
   };
 
   const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -92,8 +123,11 @@ export default function AssistantUIMock() {
       <div className='mx-auto max-w-5xl'>
         {/* Header */}
         <div className='flex items-center gap-3 mb-4'>
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className='w-12 h-12 rounded-2xl bg-slate-800/80 grid place-items-center shadow-lg'>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className='w-12 h-12 rounded-2xl bg-slate-800/80 grid place-items-center shadow-lg'
+          >
             <span className='text-lg'>🤖</span>
           </motion.div>
           <div>
@@ -108,8 +142,11 @@ export default function AssistantUIMock() {
           {/* Left panel */}
           <div className='md:col-span-1 space-y-4'>
             {/* Bucket Card */}
-            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              className='rounded-2xl bg-slate-800/60 p-4 shadow-xl border border-slate-700/40'>
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className='rounded-2xl bg-slate-800/60 p-4 shadow-xl border border-slate-700/40'
+            >
               <div className='flex items-center gap-2 mb-3'>
                 <UploadCloud className='w-5 h-5' />
                 <div className='font-medium'>S3 Photo Bucket</div>
@@ -129,7 +166,9 @@ export default function AssistantUIMock() {
                   <div className='flex flex-col items-center gap-1'>
                     <ImageIcon className='w-6 h-6' />
                     <div className='text-sm'>Drag & drop images here</div>
-                    <div className='text-xs text-slate-400'>or click to select</div>
+                    <div className='text-xs text-slate-400'>
+                      or click to select
+                    </div>
                   </div>
                 )}
               </div>
@@ -157,10 +196,15 @@ export default function AssistantUIMock() {
                   <div className='text-xs text-slate-400'>No uploads yet.</div>
                 ) : (
                   uploads.map((u: UploadItem) => (
-                    <div key={u.id} className='flex items-center gap-2 text-xs bg-slate-900/50 rounded-lg px-2 py-2'>
+                    <div
+                      key={u.id}
+                      className='flex items-center gap-2 text-xs bg-slate-900/50 rounded-lg px-2 py-2'
+                    >
                       <CheckCircle2 className='w-3.5 h-3.5' />
                       <div className='truncate'>{u.name}</div>
-                      <div className='ml-auto text-slate-400'>{Math.ceil(u.size / 1024)} KB</div>
+                      <div className='ml-auto text-slate-400'>
+                        {Math.ceil(u.size / 1024)} KB
+                      </div>
                     </div>
                   ))
                 )}
@@ -168,14 +212,21 @@ export default function AssistantUIMock() {
             </motion.div>
 
             {/* Calendar quick action (mock) */}
-            <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              className='rounded-2xl bg-slate-800/60 p-4 shadow-xl border border-slate-700/40'>
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className='rounded-2xl bg-slate-800/60 p-4 shadow-xl border border-slate-700/40'
+            >
               <div className='flex items-center gap-2 mb-3'>
                 <Calendar className='w-5 h-5' />
                 <div className='font-medium'>Quick Calendar</div>
               </div>
-              <div className='text-sm text-slate-300'>Type a natural sentence in chat like:</div>
-              <div className='text-xs text-slate-400 mt-1'>“Dentist on 9th Dec at 3pm for 30 minutes.”</div>
+              <div className='text-sm text-slate-300'>
+                Type a natural sentence in chat like:
+              </div>
+              <div className='text-xs text-slate-400 mt-1'>
+                “Dentist on 9th Dec at 3pm for 30 minutes.”
+              </div>
             </motion.div>
           </div>
 
@@ -186,7 +237,9 @@ export default function AssistantUIMock() {
                 <div
                   key={m.id}
                   className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                    m.role === 'assistant' ? 'bg-slate-900/60' : 'bg-indigo-600/70 ml-auto'
+                    m.role === 'assistant'
+                      ? 'bg-slate-900/60'
+                      : 'bg-indigo-600/70 ml-auto'
                   }`}
                 >
                   {m.text}
@@ -217,7 +270,8 @@ export default function AssistantUIMock() {
                 </button>
               </div>
               <div className='mt-2 text-[11px] text-slate-400'>
-                This is a <strong>mock</strong>. Drag & drop works on desktop; tap the bucket on mobile.
+                This is a <strong>mock</strong>. Drag & drop works on desktop;
+                tap the bucket on mobile.
               </div>
             </div>
           </div>
