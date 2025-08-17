@@ -5,12 +5,14 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
+      - cd GPT_Assistant_UI
       - npm install
   build:
     commands:
+      - cd GPT_Assistant_UI
       - npm run build
 
 artifacts:
-  base-directory: dist
+  base-directory: GPT_Assistant_UI/dist
   files:
     - '**/*'
