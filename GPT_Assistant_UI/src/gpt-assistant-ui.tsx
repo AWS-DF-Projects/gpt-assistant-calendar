@@ -64,7 +64,7 @@ export default function AssistantUIMock() {
 
       console.log('📦 Payload to send to API:', payload);
 
-      const res = await fetch(`${API_BASE}/chat`, {
+      const res = await fetch(`${API_BASE}/CHAT`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
