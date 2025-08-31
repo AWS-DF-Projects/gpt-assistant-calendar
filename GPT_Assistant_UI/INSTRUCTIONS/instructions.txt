@@ -8,3 +8,9 @@ node server.mjs
 # Run the website
 
 npm run dev
+
+-------------------------------
+# Run the Build
+
+npm run build
+

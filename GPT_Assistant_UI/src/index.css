@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 💥 Your custom dot animation below */
+@keyframes bounceDots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.2;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dot-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  height: 1em;
+  padding: 0.25em 0;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  animation: bounceDots 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
