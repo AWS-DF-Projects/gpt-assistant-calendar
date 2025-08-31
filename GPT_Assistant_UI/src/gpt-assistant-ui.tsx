@@ -1,5 +1,5 @@
 // src/gpt-assistant-ui.tsx
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   UploadCloud,
@@ -8,6 +8,8 @@ import {
   SendHorizontal,
   CheckCircle2,
 } from 'lucide-react';
+
+const API_BASE = (import.meta as any).env?.VITE_API_BASE;
 
 type Role = 'user' | 'assistant' | 'system';
 type Message = { id: string; role: Role; text: string };
@@ -19,7 +21,50 @@ type UploadItem = {
 };
 
 export default function AssistantUIMock() {
-  console.log('🚀 Assistant UI loaded');
+  // 🔐 Auth tokens
+  const [userToken, setUserToken] = useState<string | null>(
+    localStorage.getItem('userToken')
+  );
+  const [apiToken, setApiToken] = useState<string | null>(
+    localStorage.getItem('apiToken')
+  );
+
+  const checkTokens = async () => {
+    if (userToken && apiToken) {
+      return;
+    }
+
+    const secret = prompt('🔐 No token found.\nEnter your secret access word:');
+    if (!secret) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secretWord: secret }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.userToken === 'ACCESS_GRANTED') {
+        localStorage.setItem('userToken', data.userToken);
+        localStorage.setItem('apiToken', data.apiToken);
+        setUserToken(data.userToken);
+        setApiToken(data.apiToken);
+      } else {
+        alert('❌ Invalid secret word');
+      }
+    } catch (err) {
+      alert('⚠️ Error calling /token API');
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (hasCheckedTokens.current) return;
+    hasCheckedTokens.current = true;
+    checkTokens();
+  }, []);
+
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -32,16 +77,14 @@ export default function AssistantUIMock() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasCheckedTokens = useRef(false);
 
   const addMessage = (role: Role, text: string) => {
     setMessages((m) => [...m, { id: crypto.randomUUID(), role, text }]);
   };
 
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE; // e.g. "https://your-api.example.com"
-
   const onSend = async () => {
     const text = input.trim();
-    console.log('📤 Sending user message:', text);
     if (!text) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
@@ -62,11 +105,13 @@ export default function AssistantUIMock() {
         })),
       };
 
-      console.log('📦 Payload to send to API:', payload);
-
       const res = await fetch(`${API_BASE}/CHAT`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+      },
+
         body: JSON.stringify(payload),
       });
 
@@ -74,17 +119,14 @@ export default function AssistantUIMock() {
         throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
 
       const data = await res.json(); // { reply: string }
-      console.log('✅ API response:', data);
       addMessage('assistant', data.reply || '(no reply)');
     } catch (err: any) {
       console.error('❌ Error from fetch:', err);
-      console.log(`💬 New message added:`, userMsg);
       addMessage('assistant', `⚠️ Error: ${err?.message || String(err)}`);
     }
   };
 
   const handleFiles = async (files: FileList | null) => {
-    console.log('📁 Files uploaded (mock):', files);
     if (!files?.length) return;
     setIsUploading(true);
 
@@ -118,7 +160,16 @@ export default function AssistantUIMock() {
 
   const openFilePicker = () => fileInputRef.current?.click();
 
+  if (!userToken || !apiToken) {
+    return (
+      <div className="flex justify-center items-center h-screen text-slate-300 text-lg">
+        🔐 Awaiting access…
+      </div>
+    );
+  }
+
   return (
+  
     <div className='min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100 p-4 md:p-8'>
       <div className='mx-auto max-w-5xl'>
         {/* Header */}
