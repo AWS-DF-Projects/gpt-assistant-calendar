@@ -77,7 +77,7 @@ export default function AssistantUI() {
           body: JSON.stringify({
             messages: [
               { role: 'system', content: 'warm up please' },
-              { role: 'user', content: 'hi' }
+              { role: 'user', content: 'hi' },
             ],
           }),
         });
@@ -92,11 +92,7 @@ export default function AssistantUI() {
       // Once tokens are checked or set, wake the Lambda
       wakeUpLambda();
     });
-
   }, []);
-
-
-
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -169,7 +165,6 @@ export default function AssistantUI() {
       );
 
       setIsThinking(false);
-      
     } catch (err: any) {
       console.error('❌ Error from fetch:', err);
       setMessages((m) =>
@@ -220,7 +215,7 @@ export default function AssistantUI() {
 
   if (!userToken || !apiToken) {
     return (
-      <div className="flex justify-center items-center h-screen text-slate-300 text-lg">
+      <div className='flex justify-center items-center h-screen text-slate-300 text-lg'>
         🔐 Awaiting access…
       </div>
     );
@@ -339,8 +334,8 @@ export default function AssistantUI() {
           </div>
 
           {/* Right panel: Chat */}
-          <div className="md:col-span-2 flex flex-col rounded-2xl bg-slate-800/60 shadow-xl border border-slate-700/40 overflow-hidden">
-            <div className="flex-1 overflow-auto p-4 space-y-3">
+          <div className='md:col-span-2 flex flex-col rounded-2xl bg-slate-800/60 shadow-xl border border-slate-700/40 overflow-hidden'>
+            <div className='flex-1 overflow-auto p-4 space-y-3'>
               {messages.map((m: Message) => (
                 <div
                   key={m.id}
@@ -351,10 +346,10 @@ export default function AssistantUI() {
                   }`}
                 >
                   {m.text === '...' && isThinking ? (
-                    <div className="dot-container">
-                      <div className="dot" />
-                      <div className="dot" />
-                      <div className="dot" />
+                    <div className='dot-container'>
+                      <div className='dot' />
+                      <div className='dot' />
+                      <div className='dot' />
                     </div>
                   ) : (
                     <span>{m.text}</span>
@@ -364,30 +359,30 @@ export default function AssistantUI() {
             </div>
 
             {/* Footer: Chat Input */}
-            <div className="p-3 border-t border-slate-700/40">
-              <div className="flex items-center gap-2">
+            <div className='p-3 border-t border-slate-700/40'>
+              <div className='flex items-center gap-2'>
                 <button
-                  className="hidden md:inline-flex rounded-xl px-3 py-2 bg-slate-900/60 border border-slate-700/40 hover:bg-slate-900"
+                  className='hidden md:inline-flex rounded-xl px-3 py-2 bg-slate-900/60 border border-slate-700/40 hover:bg-slate-900'
                   onClick={openFilePicker}
-                  title="Upload image(s)"
+                  title='Upload image(s)'
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className='w-4 h-4' />
                 </button>
                 <input
-                  className="flex-1 rounded-xl bg-slate-900/60 px-3 py-2 outline-none border border-slate-700/40 focus:border-slate-500"
+                  className='flex-1 rounded-xl bg-slate-900/60 px-3 py-2 outline-none border border-slate-700/40 focus:border-slate-500'
                   placeholder={'Ask anything… e.g., "Add dentist 9 Dec 3pm"'}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && onSend()}
                 />
                 <button
-                  className="inline-flex items-center gap-1 rounded-xl px-3 py-2 bg-indigo-600/80 hover:bg-indigo-600"
+                  className='inline-flex items-center gap-1 rounded-xl px-3 py-2 bg-indigo-600/80 hover:bg-indigo-600'
                   onClick={onSend}
                 >
-                  <SendHorizontal className="w-4 h-4" /> Send
+                  <SendHorizontal className='w-4 h-4' /> Send
                 </button>
               </div>
-              <div className="mt-2 text-[11px] text-slate-400">
+              <div className='mt-2 text-[11px] text-slate-400'>
                 This is a <strong>mock</strong>. Drag & drop works on desktop;
                 tap the bucket on mobile.
               </div>
