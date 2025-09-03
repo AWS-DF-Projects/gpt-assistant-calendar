@@ -22,6 +22,8 @@ type UploadItem = {
 
 export default function AssistantUI() {
   const [isThinking, setIsThinking] = useState(false);
+  const [isSending, setIsSending] = useState(false); // 🛑 block double sends
+  const hasCheckedTokens = useRef(false);
 
   // 🔐 Auth tokens
   const [userToken, setUserToken] = useState<string | null>(
@@ -67,29 +69,20 @@ export default function AssistantUI() {
 
     const wakeUpLambda = async () => {
       try {
-        console.log('🧊 Sending wake-up ping to Lambda...');
-        await fetch(`${API_BASE}/CHAT`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('apiToken') || ''}`,
-          },
-          body: JSON.stringify({
-            messages: [
-              { role: 'system', content: 'warm up please' },
-              { role: 'user', content: 'hi' },
-            ],
-          }),
+        if (!API_BASE) return;
+        await fetch(`${API_BASE}/ping`, {
+          method: 'POST', // ✅ match your existing route
+          cache: 'no-store',
+          keepalive: true,
+          // no headers, no body ⇒ no preflight
         });
-        console.log('✅ Lambda warm-up ping sent!');
       } catch (err) {
         console.warn('⚠️ Lambda wake-up failed:', err);
       }
     };
 
-    // First check tokens
+    // First check tokens, then send cheap warm-up
     checkTokens().then(() => {
-      // Once tokens are checked or set, wake the Lambda
       wakeUpLambda();
     });
   }, []);
@@ -105,15 +98,22 @@ export default function AssistantUI() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const hasCheckedTokens = useRef(false);
 
   const addMessage = (role: Role, text: string) => {
     setMessages((m) => [...m, { id: crypto.randomUUID(), role, text }]);
   };
 
+  // keep a ref of latest messages
+  const latestMessagesRef = useRef<Message[]>([]);
+  useEffect(() => {
+    latestMessagesRef.current = messages;
+  }, [messages]);
+
   const onSend = async () => {
     const text = input.trim();
-    if (!text) return;
+
+    if (!text || isSending) return; // 🔒 block double sends
+    setIsSending(true);
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
     const tempId = crypto.randomUUID();
@@ -138,18 +138,19 @@ export default function AssistantUI() {
         return;
       }
 
+      const history = latestMessagesRef.current
+        .filter((m) => m.text !== '...')
+        .map((m) => ({ role: m.role, content: m.text }));
+
       const payload = {
-        messages: [...messages, userMsg].map((m) => ({
-          role: m.role,
-          content: m.text,
-        })),
+        messages: [...history, { role: 'user', content: text }],
       };
 
       const res = await fetch(`${API_BASE}/CHAT`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiToken}`,
+          'X-Access-Token': apiToken || '',
         },
         body: JSON.stringify(payload),
       });
@@ -163,8 +164,6 @@ export default function AssistantUI() {
           msg.id === tempId ? { ...msg, text: data.reply || '(no reply)' } : msg
         )
       );
-
-      setIsThinking(false);
     } catch (err: any) {
       console.error('❌ Error from fetch:', err);
       setMessages((m) =>
@@ -175,7 +174,8 @@ export default function AssistantUI() {
         )
       );
     } finally {
-      setIsThinking(false); // ✅ Only set false AFTER message swap
+      setIsThinking(false);
+      setIsSending(false); // ✅ unlock button
     }
   };
 
@@ -376,10 +376,16 @@ export default function AssistantUI() {
                   onKeyDown={(e) => e.key === 'Enter' && onSend()}
                 />
                 <button
-                  className='inline-flex items-center gap-1 rounded-xl px-3 py-2 bg-indigo-600/80 hover:bg-indigo-600'
+                  disabled={isSending}
+                  className={`inline-flex items-center gap-1 rounded-xl px-3 py-2 ${
+                    isSending
+                      ? 'bg-indigo-400 cursor-not-allowed'
+                      : 'bg-indigo-600/80 hover:bg-indigo-600'
+                  }`}
                   onClick={onSend}
                 >
-                  <SendHorizontal className='w-4 h-4' /> Send
+                  <SendHorizontal className='w-4 h-4' />
+                  {isSending ? 'Sending…' : 'Send'}
                 </button>
               </div>
               <div className='mt-2 text-[11px] text-slate-400'>

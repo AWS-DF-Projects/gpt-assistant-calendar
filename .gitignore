@@ -28,3 +28,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Google OAuth stuff
+lambda_google/credentials.json
+lambda_google/token.json
+
